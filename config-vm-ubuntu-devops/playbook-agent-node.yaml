@@ -1,0 +1,8 @@
+- name: Install docker, jenkins, agent, sonarqube, postgres
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Installation de jenkins agent node
+      command: docker run -d --network jenkins --name agent_reactjs_node -v /var/run/docker.sock:/var/run/docker.sock --init fredericeducentre/jenkins_agent_node -url http://jenkins_container:8080 29aabd90f83bb5d872ac16678481ec41100e40cf8490cf11de9ab2a4a31570fd agent_reactjs_node
+
+

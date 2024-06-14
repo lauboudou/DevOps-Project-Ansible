@@ -1,0 +1,9 @@
+- name: Copie fichiers
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Copie le projet ansible sur vm-ubuntu-install et lui donne les permissions
+      ansible.builtin.copy:
+        src: ~/DevOps-Project-Ansible
+        dest: /home/test
+        mode: '0777'

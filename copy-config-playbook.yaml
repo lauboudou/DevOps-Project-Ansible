@@ -7,3 +7,13 @@
         src: ~/DevOps-Project-Ansible
         dest: /home/test
         mode: '777'
+    - name: Trouver tous les fichiers et dossiers dans le répertoire de destination
+      ansible.builtin.find:
+        paths: /home/test/DevOps-Project-Ansible
+      register: files_to_change
+
+    - name: Changer les permissions sur tous les fichiers et dossiers trouvés
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        mode: '777'
+      loop: "{{ files_to_change.files }}"

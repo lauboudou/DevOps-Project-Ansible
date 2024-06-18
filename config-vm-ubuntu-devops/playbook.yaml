@@ -52,7 +52,7 @@
       ansible.builtin.command: docker network create jenkins
 
     - name: Installation de jenkins
-      ansible.builtin.command: docker run -d --restart on-failure --network jenkins -p 8080:8080 -p 50000:50000 --name jenkins_container jenkins/jenkins:lts-jdk17
+      ansible.builtin.command: docker run -d --restart on-failure --network jenkins -p 8080:8080 -p 50000:50000 --name jenkins_container jenkins/jenkins:lts
 
     - name: Installation de sonarqubedb - base des données postgres
       ansible.builtin.command: docker run -d --restart on-failure --name sonarqube-db --network jenkins -e POSTGRES_USER=sonar -e POSTGRES_PASSWORD=sonar postgres:12

@@ -6,4 +6,4 @@
       ansible.builtin.copy:
         src: ~/DevOps-Project-Ansible
         dest: /home/test
-        mode: '0777'
+        mode: '777'

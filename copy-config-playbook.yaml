@@ -4,12 +4,12 @@
   tasks:
     - name: Copie le projet ansible sur vm-ubuntu-install et lui donne les permissions
       ansible.builtin.copy:
-        src: ~/DevOps-Project-Ansible
+        src: ~/Reprise-DevOps-Project-Ansible
         dest: /home/test
         mode: '777'
     - name: Trouver tous les fichiers et dossiers dans le répertoire de destination
       ansible.builtin.find:
-        paths: /home/test/DevOps-Project-Ansible
+        paths: /home/test/Reprise-DevOps-Project-Ansible
       register: files_to_change
 
     - name: Changer les permissions sur tous les fichiers et dossiers trouvés

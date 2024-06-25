@@ -1,0 +1,133 @@
+- name: Deploy Docker, SonarQube and PostgreSQL using Docker
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Install required packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+    
+    - name: Create Docker network
+      docker_network:
+        name: jenkins
+        state: present
+
+    - name: Pull PostgreSQL image
+      docker_image:
+        name: postgres
+        tag: "12"
+        source: pull
+
+    - name: Pull SonarQube image
+      docker_image:
+        name: sonarqube
+        tag: community
+        source: pull
+
+    - name: Run PostgreSQL container
+      docker_container:
+        name: sonarqube-db
+        image: postgres:12
+        state: started
+        restart_policy: always
+        env:
+          POSTGRES_USER: sonar
+          POSTGRES_PASSWORD: sonar
+          POSTGRES_DB: sonar
+        ports:
+          - "5432:5432"
+        volumes:
+          - postgres_data:/var/lib/postgresql/data
+        networks:
+          - name: jenkins
+
+    - name: Run SonarQube container
+      docker_container:
+        name: sonarqube
+        image: sonarqube:community
+        state: started
+        restart_policy: always
+        env:
+          SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonar
+          SONAR_JDBC_USERNAME: sonar
+          SONAR_JDBC_PASSWORD: sonar
+        ports:
+          - "9000:9000"
+        networks:
+          - name: jenkins
+        volumes:
+          - sonarqube_data:/opt/sonarqube/data
+          - sonarqube_extensions:/opt/sonarqube/extensions
+          - sonarqube_logs:/opt/sonarqube/logs
+        user: root
+        command: sudo /bin/bash -c "apt-get update -y && apt-get upgrade -y"
+        #command: sudo /bin/bash -c "apt-get update -y && apt-get upgrade -y && runuser -l sonarqube -c '/opt/sonarqube/bin/run.sh'"
+
+    #- name: Ensure the container is running as 'sonarqube' user
+    #  command: sudo docker exec -it sonarqube bash
+    #  failed_when: sonarqube_user_id.stdout != "999"  # Assuming sonarqube user id is 999, replace if different
+
+    - name: Restart SonarQube container to apply user change
+      docker_container:
+        name: sonarqube
+        state: started
+        restart: yes
+
+    - name: Pull Jenkins LTS image
+      docker_image:
+        name: jenkins/jenkins
+        tag: lts
+        source: pull
+
+    - name: Run Jenkins container
+      docker_container:
+        name: jenkins
+        image: jenkins/jenkins:lts
+        state: started
+        ports:
+          - "8080:8080"
+        user: root
+        command: sudo /bin/bash -c "apt-get update -y && apt-get upgrade -y"
+        #command: sudo /bin/bash -c "apt-get update -y && apt-get upgrade -y && su jenkins -c '/usr/local/bin/jenkins.sh'"
+      register: jenkins_container
+
+    - name: Wait for Jenkins to be ready
+      wait_for:
+        port: 8080
+        delay: 10
+        timeout: 300
+        state: started
+
+    - name: Display Jenkins container info
+      debug:
+        msg: "Jenkins is up and running at http://localhost:8080"
